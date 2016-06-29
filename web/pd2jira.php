@@ -7,7 +7,7 @@ $jira_password = 'FlcGH15ClZbfTUmnDvzo';
 $jira_project = 'IT';
 $jira_issue_type = 'Task';
 $pd_subdomain = 'pdt-lucas';
-$pd_api_token = 'q1NBZ6sEkW6qntorQ9nC';
+$pd_api_token = 'q1NBZ6sEkW6qntorQ9n4';
 
 if ($messages) foreach ($messages->messages as $webhook) {
   $webhook_type = $webhook->type;
