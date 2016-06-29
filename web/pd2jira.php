@@ -1,13 +1,16 @@
 <?php
 $messages = json_decode(file_get_contents("php://input"));
 
-$jira_url = 'http://jira01.storefinancial.com';
-$jira_username = 'CorpSupport_PagerDuty';
-$jira_password = 'FlcGH15ClZbfTUmnDvzo';
-$jira_project = 'IT';
-$jira_issue_type = 'Task';
-$pd_subdomain = 'pdt-lucas';
-$pd_api_token = 'q1NBZ6sEkW6qntorQ9n4';
+$jira_url = getenv('JIRA_URL');
+if (substr($jira_url, strlen($jira_url)-1, 1) == "/") {
+  $jira_url = substr($jira_url, 0, strlen($jira_url)-1);
+}
+$jira_username = getenv('JIRA_USERNAME');
+$jira_password = getenv('JIRA_PASSWORD');
+$jira_project = getenv('JIRA_PROJECT');
+$jira_issue_type = getenv('JIRA_ISSUE_TYPE');
+$pd_subdomain = getenv('PAGERDUTY_SUBDOMAIN');
+$pd_api_token = getenv('PAGERDUTY_API_TOKEN');
 
 if ($messages) foreach ($messages->messages as $webhook) {
   $webhook_type = $webhook->type;
@@ -32,6 +35,7 @@ if ($messages) foreach ($messages->messages as $webhook) {
       }
 
       $summary = "PagerDuty Service: $service_name, Incident #$incident_number, Summary: $trigger_summary_data";
+      $summary = (strlen($summary) > 255) ? substr($summary,0,252) . '...' : $summary;
 
       $verb = "triggered";
 
@@ -51,11 +55,9 @@ if ($messages) foreach ($messages->messages as $webhook) {
       }
 
       //Create the JIRA ticket when an incident has been triggered
-      # $url = "$jira_url/rest/api/2/issue/";
-      $url = "http://requestb.in/1e3km2r1";
+      $url = "$jira_url/rest/api/2/issue/";
 
-
-      $data = array('fields'=>array('project'=>array('key'=>"$jira_project"),'summary'=>"$summary",'description'=>"A new PagerDuty ticket as been created.  {$trigger_summary_data}. Please go to $ticket_url to view it.", 'issuetype'=>array('name'=>"$jira_issue_type")));
+      $data = array('fields'=>array('project'=>array('key'=>"$jira_project"),'summary'=>"$summary",'description'=>"A new PagerDuty ticket has been created.  {$trigger_summary_data}. Please go to $ticket_url to view it.", 'issuetype'=>array('name'=>"$jira_issue_type")));
       $data_json = json_encode($data);
 
       $return = http_request($url, $data_json, "POST", "basic", $jira_username, $jira_password);
@@ -72,6 +74,8 @@ if ($messages) foreach ($messages->messages as $webhook) {
         http_request($url, $data_json, "POST", "token", "", $pd_api_token);
       }
       else {
+        //Log the error
+        error_log("Error: Returned status code " . $status_code . " with response " . $response);
         //Update the PagerDuty ticket if the JIRA ticket isn't made.
         $url = "https://$pd_subdomain.pagerduty.com/api/v1/incidents/$incident_id/notes";
         $data = array('note'=>array('content'=>"A JIRA ticket failed to be created. $response"),'requester_id'=>"$pd_requester_id");
