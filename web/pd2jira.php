@@ -52,6 +52,7 @@ if ($messages) foreach ($messages->messages as $webhook) {
 
       //Create the JIRA ticket when an incident has been triggered
       # $url = "$jira_url/rest/api/2/issue/";
+      $url = "http://requestb.in/1e3km2r1";
 
 
       $data = array('fields'=>array('project'=>array('key'=>"$jira_project"),'summary'=>"$summary",'description'=>"A new PagerDuty ticket as been created.  {$trigger_summary_data}. Please go to $ticket_url to view it.", 'issuetype'=>array('name'=>"$jira_issue_type")));
